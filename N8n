@@ -1,0 +1,308 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "appointment-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ed3e1c45-7061-498d-ae23-85905671f658",
+      "name": "Webhook",
+      "webhookId": "fa4c288e-28f9-4e20-9d6f-d51361396798"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d24903bb-7bf0-438b-8cbb-40cd08ee03b2",
+              "leftValue": "={{ $json.body.tool }}",
+              "rightValue": "checkAvailableSlot",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "170a1e3c-5163-4f36-9404-38b9d267c7e0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "https://api.cal.com/v2/slots/available",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "calApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "startTime",
+              "value": "={{ $json.body.startTime }}"
+            },
+            {
+              "name": "endTime",
+              "value": "={{ $json.body.endTime }}"
+            },
+            {
+              "name": "eventTypeId",
+              "value": "5863357"
+            },
+            {
+              "name": "timeZone",
+              "value": "Asia/Kolkata"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "cal-api-version",
+              "value": "2024-08-13"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "ee970d0f-d396-4621-a030-49ed348dda7b",
+      "name": "Check available slot in Cal.com",
+      "credentials": {
+        "calApi": {
+          "id": "Wz5poFVwqpQIivnW",
+          "name": "Cal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cal.com/v2/bookings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "calApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "cal-api-version",
+              "value": " 2024-08-13"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"eventTypeId\": 5863357,\n  \"start\": \"{{ $('Webhook').item.json.body.startTime }}+05:30\",\n  \"attendee\": {\n    \"name\": \"{{ $('Webhook').item.json.body.name }}\",\n    \"email\": \"{{ $('Webhook').item.json.body.email }}\",\n    \"timeZone\": \"Asia/Kolkata\",\n    \"language\": \"en\"\n  },\n  \"metadata\": {}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        160
+      ],
+      "id": "3ae99156-00df-44d6-9a88-995a9affdf72",
+      "name": "Book Appointment",
+      "credentials": {
+        "calApi": {
+          "id": "Wz5poFVwqpQIivnW",
+          "name": "Cal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        768,
+        -16
+      ],
+      "id": "5f5e8247-3db7-46da-a53d-83acdb962a32",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1wBdU-ODysl_eIn6XZN_KQr53oVn5lukzWpkmr_gXWxw",
+          "mode": "list",
+          "cachedResultName": "Appointment Bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wBdU-ODysl_eIn6XZN_KQr53oVn5lukzWpkmr_gXWxw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wBdU-ODysl_eIn6XZN_KQr53oVn5lukzWpkmr_gXWxw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Webhook').item.json.body.name }}",
+            "Email": "={{ $('Webhook').item.json.body.email }}",
+            "Date": "={{ $('Webhook').item.json.body.startTime.split('T')[0] }}",
+            "Time": "={{ $('Webhook').item.json.body.startTime.split('T')[1] }}",
+            "Booked At": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Booked At",
+              "displayName": "Booked At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        208
+      ],
+      "id": "9d6a6075-f845-4069-883e-d55678efc601",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UVT9yJMTm7ryxanN",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Check available slot in Cal.com",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Book Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check available slot in Cal.com": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Appointment": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eec441001ec26a2b97a72fff8506999473bc264101ff483f49b1e3ec37052c70"
+  }
+}
