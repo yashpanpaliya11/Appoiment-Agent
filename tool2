@@ -62,6 +62,17 @@
           "enum": null,
           "is_system_provided": false,
           "required": true
+        },
+        {
+          "id": "phone",
+          "type": "string",
+          "value_type": "llm_prompt",
+          "description": "Mobile number of the customer",
+          "dynamic_variable": "",
+          "constant_value": "",
+          "enum": null,
+          "is_system_provided": false,
+          "required": true
         }
       ],
       "required": false,
