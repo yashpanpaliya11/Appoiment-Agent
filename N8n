@@ -10,12 +10,12 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -176,
+        80
       ],
-      "id": "ed3e1c45-7061-498d-ae23-85905671f658",
+      "id": "1147c9ca-29b2-4c12-ae62-5a2995fd9d2f",
       "name": "Webhook",
-      "webhookId": "fa4c288e-28f9-4e20-9d6f-d51361396798"
+      "webhookId": "157db96b-f1b3-4510-8c96-6a73b6445c79"
     },
     {
       "parameters": {
@@ -45,10 +45,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        208,
-        0
+        48,
+        80
       ],
-      "id": "170a1e3c-5163-4f36-9404-38b9d267c7e0",
+      "id": "baee6f7e-d89c-4580-a56a-ae70ac8ffd7e",
       "name": "If"
     },
     {
@@ -61,11 +61,11 @@
           "parameters": [
             {
               "name": "startTime",
-              "value": "={{ $json.body.startTime }}"
+              "value": "={{ $json.body.startTime.split('T')[0] + 'T00:00:00+05:30' }}"
             },
             {
               "name": "endTime",
-              "value": "={{ $json.body.endTime }}"
+              "value": "={{ $json.body.startTime.split('T')[0] + 'T23:59:59+05:30' }}"
             },
             {
               "name": "eventTypeId",
@@ -91,10 +91,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        416,
-        -96
+        272,
+        -16
       ],
-      "id": "ee970d0f-d396-4621-a030-49ed348dda7b",
+      "id": "c72659c3-2020-4bb6-b227-0b87a409dc2b",
       "name": "Check available slot in Cal.com",
       "credentials": {
         "calApi": {
@@ -126,10 +126,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        448,
-        160
+        272,
+        176
       ],
-      "id": "3ae99156-00df-44d6-9a88-995a9affdf72",
+      "id": "6979c4e5-c8af-466a-b4f4-236ebabafb6d",
       "name": "Book Appointment",
       "credentials": {
         "calApi": {
@@ -146,10 +146,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        768,
+        496,
         -16
       ],
-      "id": "5f5e8247-3db7-46da-a53d-83acdb962a32",
+      "id": "3a56b08c-d313-487c-b312-1c46d8eca4ba",
       "name": "Respond to Webhook"
     },
     {
@@ -176,7 +176,8 @@
             "Email": "={{ $('Webhook').item.json.body.email }}",
             "Date": "={{ $('Webhook').item.json.body.startTime.split('T')[0] }}",
             "Time": "={{ $('Webhook').item.json.body.startTime.split('T')[1] }}",
-            "Booked At": "={{ $now }}"
+            "Booked At": "={{ $now }}",
+            "Phone": "={{ $('Webhook').item.json.body.phone ?? \"\" }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -208,6 +209,16 @@
               "canBeUsedToMatch": true
             },
             {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
               "id": "Time",
               "displayName": "Time",
               "required": false,
@@ -234,15 +245,38 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        768,
-        208
+        496,
+        176
       ],
-      "id": "9d6a6075-f845-4069-883e-d55678efc601",
+      "id": "b044d0ea-df38-473d-bcc7-a60ee425bac0",
       "name": "Append row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "UVT9yJMTm7ryxanN",
           "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "Appointment Confirmed ✅",
+        "message": "=<h2>Appointment Confirmed ✅</h2>\n\n<p>Namaskar {{ $json.Name }},</p>\n\n<p>Aapki appointment successfully book ho gayi hai.</p>\n\n<p>\n<b>Date:</b> {{ $json.Date }}<br>\n<b>Time:</b> {{ $json.Time }}\n</p>\n\n<p>\nDhanyavaad,<br>\nAppointment Booking Team\n</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        176
+      ],
+      "id": "2cacca6a-aad8-41ef-a7a6-7c3cef303c17",
+      "name": "Send a message",
+      "webhookId": "a497fa80-20db-4112-b716-3381c6ed1343",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "U0weoqJRSprFEFbl",
+          "name": "Gmail OAuth2 API"
         }
       }
     }
@@ -293,6 +327,17 @@
         [
           {
             "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
             "type": "main",
             "index": 0
           }
